@@ -1,6 +1,8 @@
 # drink
 Dependency Injection-based Command Library for Spigot plugins inspired by Google's Guice and sk89q's Intake.
 
+Warning: this fork currently has not a good implementation of overrideExistingCommands option. Will add it in the future
+
 ## What is drink?
 drink is a command library designed to remove the repetitive code involved with writing commands for Spigot plugins specifically.
 
@@ -10,8 +12,8 @@ Google's Guice library and sk89q's Intake command library.
 ## Installing
 You can either shade this repository into your plugin, or run it as a plugin by itself.
 
-1. Clone this repository: `git clone git@github.com:jonahseguin/drink.git`
-2. Enter the directory: `cd drink`
+1. Clone this repository: `git clone https://github.com/ImOnlyFire/drink-bungee.git`
+2. Enter the directory: `cd drink-bungee`
 3. Build & install with Maven: `mvn clean package install`
 
 Next, add drink to your project's dependencies via Maven
@@ -20,7 +22,7 @@ Add this to your `pom.xml` `<dependencies>`:
 ```xml
 <dependency>
   <groupId>com.jonahseguin</groupId>
-  <artifactId>drink</artifactId>
+  <artifactId>drink-bungee</artifactId>
   <version>1.0.3</version> <!-- At time of writing, 1.0.3 is latest version.  See the pom.xml for the latest version -->
   <scope>compile</scope> <!-- Change scope to 'provided' if you are running drink as a plugin rather than shading it -->
 </dependency>
