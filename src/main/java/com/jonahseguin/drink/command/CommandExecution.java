@@ -2,7 +2,7 @@ package com.jonahseguin.drink.command;
 
 import com.jonahseguin.drink.argument.CommandArgs;
 import lombok.Getter;
-import org.bukkit.command.CommandSender;
+import net.md_5.bungee.api.CommandSender;
 
 import java.util.List;
 

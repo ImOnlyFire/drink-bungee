@@ -1,7 +1,8 @@
 package com.jonahseguin.drink.exception;
 
-import org.bukkit.ChatColor;
-import org.bukkit.command.CommandSender;
+import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.CommandSender;
+import net.md_5.bungee.api.chat.TextComponent;
 
 public class CommandExitMessage extends Exception {
 
@@ -10,6 +11,6 @@ public class CommandExitMessage extends Exception {
     }
 
     public void print(CommandSender sender) {
-        sender.sendMessage(ChatColor.RED + getMessage());
+        sender.sendMessage(TextComponent.fromLegacyText(ChatColor.RED + getMessage()));
     }
 }

@@ -1,7 +1,8 @@
 package com.jonahseguin.drink.argument;
 
-import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
+
+import net.md_5.bungee.api.CommandSender;
+import net.md_5.bungee.api.connection.ProxiedPlayer;
 
 public class CommandArg {
 
@@ -30,11 +31,11 @@ public class CommandArg {
     }
 
     public boolean isSenderPlayer() {
-        return sender instanceof Player;
+        return sender instanceof ProxiedPlayer;
     }
 
-    public Player getSenderAsPlayer() {
-        return (Player) sender;
+    public ProxiedPlayer getSenderAsPlayer() {
+        return (ProxiedPlayer) sender;
     }
 
     public CommandArgs getArgs() {

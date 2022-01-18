@@ -1,10 +1,10 @@
-package com.jonahseguin.drink.provider.spigot;
+package com.jonahseguin.drink.provider.bungee;
 
 import com.jonahseguin.drink.argument.CommandArg;
 import com.jonahseguin.drink.exception.CommandExitMessage;
 import com.jonahseguin.drink.parametric.DrinkProvider;
-import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
+import net.md_5.bungee.api.connection.ProxiedPlayer;
+import net.md_5.bungee.api.plugin.Plugin;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -12,7 +12,7 @@ import java.lang.annotation.Annotation;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class PlayerProvider extends DrinkProvider<Player> {
+public class PlayerProvider extends DrinkProvider<ProxiedPlayer> {
 
     private final Plugin plugin;
 
@@ -37,15 +37,15 @@ public class PlayerProvider extends DrinkProvider<Player> {
 
     @Nullable
     @Override
-    public Player defaultNullValue() {
+    public ProxiedPlayer defaultNullValue() {
         return null;
     }
 
     @Nullable
     @Override
-    public Player provide(@Nonnull CommandArg arg, @Nonnull List<? extends Annotation> annotations) throws CommandExitMessage {
+    public ProxiedPlayer provide(@Nonnull CommandArg arg, @Nonnull List<? extends Annotation> annotations) throws CommandExitMessage {
         String name = arg.get();
-        Player p = plugin.getServer().getPlayer(name);
+        ProxiedPlayer p = plugin.getProxy().getPlayer(name);
         if (p != null) {
             return p;
         }
@@ -60,6 +60,6 @@ public class PlayerProvider extends DrinkProvider<Player> {
     @Override
     public List<String> getSuggestions(@Nonnull String prefix) {
         final String finalPrefix = prefix.toLowerCase();
-        return plugin.getServer().getOnlinePlayers().stream().map(p -> p.getName().toLowerCase()).filter(s -> finalPrefix.length() == 0 || s.startsWith(finalPrefix)).collect(Collectors.toList());
+        return plugin.getProxy().getPlayers().stream().map(p -> p.getName().toLowerCase()).filter(s -> finalPrefix.length() == 0 || s.startsWith(finalPrefix)).collect(Collectors.toList());
     }
 }

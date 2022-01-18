@@ -4,19 +4,18 @@ import com.jonahseguin.drink.command.DrinkAuthorizer;
 import com.jonahseguin.drink.command.DrinkCommandContainer;
 import com.jonahseguin.drink.modifier.DrinkModifier;
 import com.jonahseguin.drink.parametric.binder.DrinkBinder;
-import org.bukkit.plugin.java.JavaPlugin;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.annotation.Annotation;
 
 /**
- * Drink CommandServices are {@link org.bukkit.plugin.java.JavaPlugin}-specific.
+ * Drink CommandServices are {@link net.md_5.bungee.api.plugin.Plugin}-specific.
  * Meaning one per JavaPlugin (Spigot/Bukkit Plugin).
  * Since the commands are associated with the specified command,
  * and are dynamically registered into the server's CommandMap
  * <p>
- * See {@link Drink#get(JavaPlugin)} for getting an instance of a functional {@link CommandService}
+ * See {@link Drink#get(net.md_5.bungee.api.plugin.Plugin)} for getting an instance of a functional {@link CommandService}
  */
 public interface CommandService {
 
@@ -77,8 +76,8 @@ public interface CommandService {
 
     /**
      * Set the authorizer that Drink uses.
-     * This will allow you to edit the behavior for checking if a {@link org.bukkit.command.CommandSender} or
-     * {@link org.bukkit.entity.Player} has permission to run a command.
+     * This will allow you to edit the behavior for checking if a {@link net.md_5.bungee.api.CommandSender} or
+     * {@link net.md_5.bungee.api.connection.ProxiedPlayer} has permission to run a command.
      * You can also edit the no-permission message by modifying this, or use {@link DrinkAuthorizer#setNoPermissionMessage(String)}
      * @param authorizer {@link Nonnull} A {@link DrinkAuthorizer} instance to be used for
      *                                  checking authorization for command execution

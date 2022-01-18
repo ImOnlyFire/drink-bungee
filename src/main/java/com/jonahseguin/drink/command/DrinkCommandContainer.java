@@ -1,45 +1,39 @@
 package com.jonahseguin.drink.command;
 
 import com.google.common.base.Preconditions;
+import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.CommandSender;
+import net.md_5.bungee.api.chat.TextComponent;
+import net.md_5.bungee.api.plugin.Command;
+import net.md_5.bungee.api.plugin.TabExecutor;
 import org.apache.commons.lang.StringUtils;
-import org.bukkit.Location;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandSender;
-import org.bukkit.command.PluginIdentifiableCommand;
-import org.bukkit.plugin.Plugin;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
 
-public class DrinkCommandContainer extends Command implements PluginIdentifiableCommand {
+public class DrinkCommandContainer extends Command implements TabExecutor {
 
     private final DrinkCommandService commandService;
-    private final Object object;
     private final String name;
     private final Set<String> aliases;
     private final Map<String, DrinkCommand> commands;
     private final DrinkCommand defaultCommand;
-    private final DrinkCommandExecutor executor;
-    private final DrinkTabCompleter tabCompleter;
     private boolean overrideExistingCommands = true;
     private boolean defaultCommandIsHelp = false;
 
-    public DrinkCommandContainer(DrinkCommandService commandService, Object object, String name, Set<String> aliases, Map<String, DrinkCommand> commands) {
-        super(name, "", "/" + name, new ArrayList<>(aliases));
+    public DrinkCommandContainer(DrinkCommandService commandService, String name, Set<String> aliases, Map<String, DrinkCommand> commands) {
+        super(name, "", "/" + name, String.join(",", aliases));
         this.commandService = commandService;
-        this.object = object;
         this.name = name;
         this.aliases = aliases;
         this.commands = commands;
         this.defaultCommand = calculateDefaultCommand();
-        this.executor = new DrinkCommandExecutor(commandService, this);
-        this.tabCompleter = new DrinkTabCompleter(commandService, this);
-        if (defaultCommand != null) {
-            setUsage("/" + name + " " + defaultCommand.getGeneratedUsage());
-            setDescription(defaultCommand.getDescription());
-            setPermission(defaultCommand.getPermission());
-        }
+//        if (defaultCommand != null) {
+//            setUsage("/" + name + " " + defaultCommand.getGeneratedUsage());
+//            setDescription(defaultCommand.getDescription());
+//            setPermission(defaultCommand.getPermission());
+//        }
     }
 
     public final DrinkCommandContainer registerSub(@Nonnull Object handler) {
@@ -95,6 +89,7 @@ public class DrinkCommandContainer extends Command implements PluginIdentifiable
     /**
      * Gets a sub-command based on given arguments and also returns the new actual argument values
      * based on the arguments that were consumed for the sub-command key
+     *
      * @param args the original arguments passed in
      * @return the DrinkCommand (if present, Nullable) and the new argument array
      */
@@ -116,31 +111,42 @@ public class DrinkCommandContainer extends Command implements PluginIdentifiable
     }
 
     @Override
-    public boolean execute(CommandSender commandSender, String s, String[] strings) {
-        return executor.onCommand(commandSender, this, s, strings);
-    }
-
-    @Override
-    public List<String> tabComplete(CommandSender sender, String alias, String[] args) throws IllegalArgumentException {
-        return tabCompleter.onTabComplete(sender, this, alias, args);
-    }
-
-    @Override
-    public List<String> tabComplete(CommandSender sender, String alias, String[] args, Location location) throws IllegalArgumentException {
-        return tabCompleter.onTabComplete(sender, this, alias, args);
-    }
-
-    @Override
-    public Plugin getPlugin() {
-        return commandService.getPlugin();
+    public void execute(CommandSender sender, String[] args) {
+        try {
+            Map.Entry<DrinkCommand, String[]> data = getCommand(args);
+            if (data != null && data.getKey() != null) {
+                if (args.length > 0) {
+                    if (args[args.length - 1].equalsIgnoreCase("help") && !data.getKey().getName().equalsIgnoreCase("help")) {
+                        // Send help if they ask for it, if they registered a custom help sub-command, allow that to override our help menu
+                        commandService.getHelpService().sendHelpFor(sender, this);
+                        return;
+                    }
+                }
+                commandService.executeCommand(sender, data.getKey(), getName(), data.getValue());
+            } else {
+                if (args.length > 0) {
+                    if (args[args.length - 1].equalsIgnoreCase("help")) {
+                        // Send help if they ask for it, if they registered a custom help sub-command, allow that to override our help menu
+                        commandService.getHelpService().sendHelpFor(sender, this);
+                        return;
+                    }
+                    sender.sendMessage(TextComponent.fromLegacyText(ChatColor.RED + "Unknown sub-command: " + args[0] + ".  Use '/" + getName() + " help' for available commands."));
+                } else {
+                    if (isDefaultCommandIsHelp()) {
+                        commandService.getHelpService().sendHelpFor(sender, this);
+                    } else {
+                        sender.sendMessage(TextComponent.fromLegacyText(ChatColor.RED + "Please choose a sub-command.  Use '/" + getName() + " help' for available commands."));
+                    }
+                }
+            }
+        } catch (Exception ex) {
+            sender.sendMessage(TextComponent.fromLegacyText(ChatColor.RED + "An exception occurred while performing this command."));
+            ex.printStackTrace();
+        }
     }
 
     public DrinkCommandService getCommandService() {
         return commandService;
-    }
-
-    public Object getObject() {
-        return object;
     }
 
     @Override
@@ -154,14 +160,6 @@ public class DrinkCommandContainer extends Command implements PluginIdentifiable
 
     public Map<String, DrinkCommand> getCommands() {
         return commands;
-    }
-
-    public DrinkCommandExecutor getExecutor() {
-        return executor;
-    }
-
-    public DrinkTabCompleter getTabCompleter() {
-        return tabCompleter;
     }
 
     public boolean isOverrideExistingCommands() {
@@ -180,5 +178,59 @@ public class DrinkCommandContainer extends Command implements PluginIdentifiable
     public DrinkCommandContainer setDefaultCommandIsHelp(boolean defaultCommandIsHelp) {
         this.defaultCommandIsHelp = defaultCommandIsHelp;
         return this;
+    }
+
+    @Override
+    public Iterable<String> onTabComplete(CommandSender sender, String[] args) {
+        Map.Entry<DrinkCommand, String[]> data = getCommand(args);
+        if (data != null && data.getKey() != null) {
+            String tabCompleting = "";
+            int tabCompletingIndex = 0;
+            if (data.getValue().length > 0) {
+                tabCompleting = data.getValue()[data.getValue().length - 1];
+                tabCompletingIndex = data.getValue().length - 1;
+            }
+            DrinkCommand drinkCommand = data.getKey();
+            if (drinkCommand.getConsumingProviders().length > tabCompletingIndex) {
+                List<String> s = drinkCommand.getConsumingProviders()[tabCompletingIndex].getSuggestions(tabCompleting);
+                if (s != null) {
+                    List<String> suggestions = new ArrayList<>(s);
+                    if (args.length == 0 || args.length == 1) {
+                        String tC = "";
+                        if (args.length > 0) {
+                            tC = args[args.length - 1];
+                        }
+                        suggestions.addAll(getCommandSuggestions(tC));
+                    }
+                    return suggestions;
+                } else {
+                    if (args.length == 0 || args.length == 1) {
+                        String tC = "";
+                        if (args.length > 0) {
+                            tC = args[args.length - 1];
+                        }
+                        return getCommandSuggestions(tC);
+                    }
+                }
+            } else {
+                if (args.length == 0 || args.length == 1) {
+                    String tC = "";
+                    if (args.length > 0) {
+                        tC = args[args.length - 1];
+                    }
+                    return getCommandSuggestions(tC);
+                }
+            }
+        } else {
+            if (args.length == 0 || args.length == 1) {
+                String tC = "";
+                if (args.length > 0) {
+                    tC = args[args.length - 1];
+                }
+                return getCommandSuggestions(tC);
+            }
+        }
+
+        return Collections.emptyList();
     }
 }

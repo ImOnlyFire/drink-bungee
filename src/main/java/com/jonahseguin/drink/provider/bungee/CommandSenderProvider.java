@@ -1,9 +1,9 @@
-package com.jonahseguin.drink.provider.spigot;
+package com.jonahseguin.drink.provider.bungee;
 
 import com.jonahseguin.drink.argument.CommandArg;
 import com.jonahseguin.drink.exception.CommandExitMessage;
 import com.jonahseguin.drink.parametric.DrinkProvider;
-import org.bukkit.command.CommandSender;
+import net.md_5.bungee.api.CommandSender;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

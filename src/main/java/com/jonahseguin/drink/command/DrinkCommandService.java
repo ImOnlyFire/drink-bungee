@@ -16,17 +16,16 @@ import com.jonahseguin.drink.parametric.DrinkProvider;
 import com.jonahseguin.drink.parametric.ProviderAssigner;
 import com.jonahseguin.drink.parametric.binder.DrinkBinder;
 import com.jonahseguin.drink.provider.*;
-import com.jonahseguin.drink.provider.spigot.CommandSenderProvider;
-import com.jonahseguin.drink.provider.spigot.ConsoleCommandSenderProvider;
-import com.jonahseguin.drink.provider.spigot.PlayerProvider;
-import com.jonahseguin.drink.provider.spigot.PlayerSenderProvider;
+import com.jonahseguin.drink.provider.bungee.CommandSenderProvider;
+import com.jonahseguin.drink.provider.bungee.PlayerProvider;
+import com.jonahseguin.drink.provider.bungee.PlayerSenderProvider;
 import lombok.Getter;
+import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.CommandSender;
+import net.md_5.bungee.api.chat.TextComponent;
+import net.md_5.bungee.api.connection.ProxiedPlayer;
+import net.md_5.bungee.api.plugin.Plugin;
 import org.apache.commons.lang.StringUtils;
-import org.bukkit.ChatColor;
-import org.bukkit.command.CommandSender;
-import org.bukkit.command.ConsoleCommandSender;
-import org.bukkit.entity.Player;
-import org.bukkit.plugin.java.JavaPlugin;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -41,28 +40,28 @@ public class DrinkCommandService implements CommandService {
 
     public static String DEFAULT_KEY = "DRINK_DEFAULT";
 
-    private final JavaPlugin plugin;
+    private final Plugin plugin;
     private final CommandExtractor extractor;
     private final DrinkHelpService helpService;
     private final ProviderAssigner providerAssigner;
     private final ArgumentParser argumentParser;
     private final ModifierService modifierService;
-    private final DrinkSpigotRegistry spigotRegistry;
     private final FlagExtractor flagExtractor;
+    private final DrinkBungeeRegistry bungeeRegistry;
     private DrinkAuthorizer authorizer;
 
     private final ConcurrentMap<String, DrinkCommandContainer> commands = new ConcurrentHashMap<>();
     private final ConcurrentMap<Class<?>, BindingContainer<?>> bindings = new ConcurrentHashMap<>();
 
-    public DrinkCommandService(JavaPlugin plugin) {
+    public DrinkCommandService(Plugin plugin) {
         this.plugin = plugin;
         this.extractor = new CommandExtractor(this);
         this.helpService = new DrinkHelpService(this);
         this.providerAssigner = new ProviderAssigner(this);
         this.argumentParser = new ArgumentParser(this);
         this.modifierService = new ModifierService(this);
-        this.spigotRegistry = new DrinkSpigotRegistry(this);
         this.flagExtractor = new FlagExtractor(this);
+        this.bungeeRegistry = new DrinkBungeeRegistry(plugin);
         this.authorizer = new DrinkAuthorizer();
 
         this.bindDefaults();
@@ -85,9 +84,9 @@ public class DrinkCommandService implements CommandService {
         bind(CommandArgs.class).toProvider(CommandArgsProvider.INSTANCE);
 
         bind(CommandSender.class).annotatedWith(Sender.class).toProvider(CommandSenderProvider.INSTANCE);
-        bind(ConsoleCommandSender.class).annotatedWith(Sender.class).toProvider(ConsoleCommandSenderProvider.INSTANCE);
-        bind(Player.class).annotatedWith(Sender.class).toProvider(PlayerSenderProvider.INSTANCE);
-        bind(Player.class).toProvider(new PlayerProvider(plugin));
+        //bind(ConsoleCommandSender.class).annotatedWith(Sender.class).toProvider(ConsoleCommandSenderProvider.INSTANCE);
+        bind(ProxiedPlayer.class).annotatedWith(Sender.class).toProvider(PlayerSenderProvider.INSTANCE);
+        bind(ProxiedPlayer.class).toProvider(new PlayerProvider(plugin));
     }
 
     @Override
@@ -98,9 +97,7 @@ public class DrinkCommandService implements CommandService {
 
     @Override
     public void registerCommands() {
-        commands.values().forEach(cmd -> {
-            spigotRegistry.register(cmd, cmd.isOverrideExistingCommands());
-        });
+        commands.values().forEach(cmd -> bungeeRegistry.register(cmd, cmd.isOverrideExistingCommands()));
     }
 
     @Override
@@ -118,7 +115,7 @@ public class DrinkCommandService implements CommandService {
             if (extractCommands.isEmpty()) {
                 throw new CommandRegistrationException("There were no commands to register in the " + handler.getClass().getSimpleName() + " class (" + extractCommands.size() + ")");
             }
-            DrinkCommandContainer container = new DrinkCommandContainer(this, handler, name, aliasesSet, extractCommands);
+            DrinkCommandContainer container = new DrinkCommandContainer(this, name, aliasesSet, extractCommands);
             commands.put(getCommandKey(name), container);
             return container;
         } catch (MissingProviderException | CommandStructureException ex) {
@@ -151,7 +148,7 @@ public class DrinkCommandService implements CommandService {
         Preconditions.checkNotNull(args, "Args cannot be null");
         if (authorizer.isAuthorized(sender, command)) {
             if (command.isRequiresAsync()) {
-                plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> finishExecution(sender, command, label, args));
+                plugin.getProxy().getScheduler().runAsync(plugin, () -> finishExecution(sender, command, label, args));
             } else {
                 finishExecution(sender, command, label, args);
             }
@@ -172,14 +169,14 @@ public class DrinkCommandService implements CommandService {
             try {
                 command.getMethod().invoke(command.getHandler(), parsedArguments);
             } catch (IllegalAccessException | InvocationTargetException ex) {
-                sender.sendMessage(ChatColor.RED + "Could not perform command.  Notify an administrator");
+                sender.sendMessage(TextComponent.fromLegacyText(ChatColor.RED + "Could not perform command.  Notify an administrator"));
                 throw new DrinkException("Failed to execute command '" + command.getName() + "' with arguments '" + StringUtils.join(Arrays.asList(args), ' ') + " for sender " + sender.getName(), ex);
             }
         }
         catch (CommandExitMessage ex) {
             ex.print(sender);
         } catch (CommandArgumentException ex) {
-            sender.sendMessage(ChatColor.RED + ex.getMessage());
+            sender.sendMessage(TextComponent.fromLegacyText(ChatColor.RED + ex.getMessage()));
             helpService.sendUsageMessage(sender, getContainerFor(command), command);
         }
     }

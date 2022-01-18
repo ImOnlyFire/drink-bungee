@@ -4,8 +4,8 @@ import com.google.common.base.Preconditions;
 import com.jonahseguin.drink.command.CommandFlag;
 import com.jonahseguin.drink.command.DrinkCommandService;
 import lombok.Getter;
-import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
+import net.md_5.bungee.api.CommandSender;
+import net.md_5.bungee.api.connection.ProxiedPlayer;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -58,11 +58,11 @@ public class CommandArgs {
     }
 
     public boolean isSenderPlayer() {
-        return sender instanceof Player;
+        return sender instanceof ProxiedPlayer;
     }
 
-    public Player getSenderAsPlayer() {
-        return (Player) sender;
+    public ProxiedPlayer getSenderAsPlayer() {
+        return (ProxiedPlayer) sender;
     }
 
 

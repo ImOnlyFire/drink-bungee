@@ -2,8 +2,9 @@ package com.jonahseguin.drink.command;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.bukkit.ChatColor;
-import org.bukkit.command.CommandSender;
+import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.CommandSender;
+import net.md_5.bungee.api.chat.TextComponent;
 
 import javax.annotation.Nonnull;
 
@@ -16,7 +17,7 @@ public class DrinkAuthorizer {
     public boolean isAuthorized(@Nonnull CommandSender sender, @Nonnull DrinkCommand command) {
         if (command.getPermission() != null && command.getPermission().length() > 0) {
             if (!sender.hasPermission(command.getPermission())) {
-                sender.sendMessage(noPermissionMessage);
+                sender.sendMessage(TextComponent.fromLegacyText(noPermissionMessage));
                 return false;
             }
         }

@@ -1,6 +1,6 @@
 package com.jonahseguin.drink.command;
 
-import org.bukkit.command.CommandSender;
+import net.md_5.bungee.api.CommandSender;
 
 public interface HelpFormatter {
 
