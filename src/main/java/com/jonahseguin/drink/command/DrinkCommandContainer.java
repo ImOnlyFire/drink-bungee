@@ -1,5 +1,6 @@
 package com.jonahseguin.drink.command;
 
+import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.CommandSender;
@@ -23,17 +24,16 @@ public class DrinkCommandContainer extends Command implements TabExecutor {
     private boolean defaultCommandIsHelp = false;
 
     public DrinkCommandContainer(DrinkCommandService commandService, String name, Set<String> aliases, Map<String, DrinkCommand> commands) {
-        super(name, "", "/" + name, String.join(",", aliases));
+        super(name, "", aliases.toArray(new String[0]));
+
         this.commandService = commandService;
         this.name = name;
+
         this.aliases = aliases;
         this.commands = commands;
         this.defaultCommand = calculateDefaultCommand();
-//        if (defaultCommand != null) {
-//            setUsage("/" + name + " " + defaultCommand.getGeneratedUsage());
-//            setDescription(defaultCommand.getDescription());
-//            setPermission(defaultCommand.getPermission());
-//        }
+
+        setPermissionMessage(ChatColor.RED + "You do not have permission to perform this command.");
     }
 
     public final DrinkCommandContainer registerSub(@Nonnull Object handler) {
@@ -112,6 +112,11 @@ public class DrinkCommandContainer extends Command implements TabExecutor {
 
     @Override
     public void execute(CommandSender sender, String[] args) {
+        String permission = defaultCommand == null ? "" : defaultCommand.getPermission();
+        if(!permission.isEmpty() && !sender.hasPermission(permission)){
+            sender.sendMessage(new TextComponent(getPermissionMessage()));
+            return;
+        }
         try {
             Map.Entry<DrinkCommand, String[]> data = getCommand(args);
             if (data != null && data.getKey() != null) {

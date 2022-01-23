@@ -22,12 +22,11 @@ public class DrinkBungeeRegistry {
                 if (command.getKey().contains(container.getName().toLowerCase())) {
                     ProxyServer.getInstance().getPluginManager().unregisterCommand(command.getValue());
                 }
-                // TODO FIND A WAY TO DO THIS
-//                for (String s : container.getDrinkAliases()) {
-//                    if (command.getKey().contains(s.toLowerCase())) {
-//                        knownCommands.remove(s).unregister(commandMap);
-//                    }
-//                }
+                /*for (String s : container.getDrinkAliases()) {
+                    if (command.getKey().contains(s.toLowerCase())) {
+                        ProxyServer.getInstance().getPluginManager().unregisterCommand(command.getValue());
+                    }
+                }*/
             }
         }
 
